@@ -13,10 +13,43 @@ def stream_text(text, delay=0.02):
     for word in text.split(" "):
         yield word + " "
         time.sleep(delay)
-        
-    # Yield a newline at the end if you appended text (like the URL warning)
     if "\n" in text:
         yield ""
+
+def play_ping_sound():
+    try:
+        # Option 1: local file (put your own ping.mp3 in assets/)
+        ping_file = "assets/ping.mp3"
+        with open(ping_file, "rb") as f:
+            audio_bytes = f.read()
+        st.audio(audio_bytes, format="audio/mpeg", autoplay=True)
+    except FileNotFoundError:
+        # Option 2: fallback – Web Audio beep (works after user click)
+        components.html("""
+            <script>
+                (function() {
+                    try {
+                        var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                        var oscillator = audioCtx.createOscillator();
+                        var gainNode = audioCtx.createGain();
+                        oscillator.connect(gainNode);
+                        gainNode.connect(audioCtx.destination);
+                        oscillator.frequency.value = 880;   // high 'ping' tone
+                        gainNode.gain.value = 0.2;
+                        oscillator.type = 'sine';
+                        oscillator.start();
+                        gainNode.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.3);
+                        oscillator.stop(audioCtx.currentTime + 0.3);
+                        audioCtx.resume();
+                    } catch(e) {
+                        console.log("Web Audio not supported – add a custom ping.mp3 to assets/");
+                    }
+                })();
+            </script>
+        """, height=0)
+    except Exception:
+        # Silent fail – no sound
+        pass
 
 def main():
     # Page configuration
@@ -24,7 +57,6 @@ def main():
 
     # Load the API key
     api_key = load_environment()
-    # Check the key
     if not api_key:
         st.error("No API key was found - please head over to the troubleshooting notebook in this folder to identify & fix!")
     elif not api_key.startswith("sk-proj-"):
@@ -48,6 +80,9 @@ def main():
 
     # React to user input
     if prompt := st.chat_input("Enter website URL..."):
+        # Play the ping sound (Messenger style)
+        play_ping_sound()
+
         # Display user message in chat message container
         st.chat_message("user").markdown(prompt)
         # Add user message to chat history
@@ -58,13 +93,11 @@ def main():
             try:
                 # Check if the input looks like a URL
                 if prompt.strip().startswith("http://") or prompt.strip().startswith("https://"):
-                    # Get the full response first
                     full_response = summarize(prompt, ctr=False)
                 else:
-                    # Respond to greetings or non-URL text
                     full_response = custom_response(prompt) + "\n\n(Note: For website summaries, please enter a valid URL starting with http:// or https://)"
 
-                # Stream the response instead of spinning
+                # Stream the response word by word
                 st.write_stream(stream_text(full_response))
                 
                 # Add assistant response to chat history

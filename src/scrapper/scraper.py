@@ -27,14 +27,3 @@ def fetch_website_contents(url, verified_certificate=None):
     else:
         text = ""
     return (title + "\n\n" + text)[:2_000]
-
-
-def fetch_website_links(url):
-    """
-    Return the links on the webiste at the given url
-    """
-    response = requests.get(url, headers=headers)
-    soup = BeautifulSoup(response.content, "html.parser")
-    # Find all links
-    links = [link.get("href") for link in soup.find_all("a")]
-    return [link for link in links if link]

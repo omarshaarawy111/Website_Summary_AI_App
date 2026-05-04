@@ -8,7 +8,7 @@ This project automatically:
 1.  **Scrapes** a given URL for its main textual content.
 2.  **Cleans** the HTML to extract relevant text.
 3.  **Sends** the content to an LLM (e.g., OpenAI's GPT models).
-4.  **Generates** a summary of the webpage.
+4.  **Generates** a summary of the webpage.   
 
 ## 🎯 Key Features
 
